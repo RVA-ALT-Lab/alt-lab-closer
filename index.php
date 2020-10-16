@@ -25,24 +25,30 @@ add_filter( 'query_vars', 'closed_query_vars' );
 
 
 
-add_action('the_post', 'closer_add_tag');
 
-function closer_add_tag(){
-  global $post;
+function closer_add_tag($post){
+  $post_id = get_queried_object_id();
+
   if ( get_query_var('closed',1) && get_query_var('pw',1) ) {
     $closed = get_query_var('closed',1);
     $url_pw = get_query_var('pw',1);
-    $post_pw = get_post_meta($post->ID, '_closer_pw', true);
+    $post_pw = get_post_meta($post_id, '_closer_pw', true);
     if ($closed == 'closed' && $url_pw == $post_pw){
-      wp_set_post_tags( $post->ID, 'closed', true );
+     wp_set_post_tags( $post_id, 'closed', true );
     }
   }
+  return $post;
 }
 
-// add_filter( 'the_content', 'closer_add_tag');
+add_action('the_post', 'closer_add_tag');
+
+
+//allow manual entry of underscore custom fields 
+add_filter( 'is_protected_meta', '__return_false');
 
 
 
+add_filter('acf/settings/remove_wp_meta_box', '__return_false');
 
 //LOGGER -- like frogger but more useful
 
@@ -60,7 +66,7 @@ if ( ! function_exists('write_log')) {
 
 //add secret password
 function closer_add_meta_pw($post_id){
-  $pw = wp_generate_password(22, true);//create pw
+  $pw = sanitize_title(wp_generate_password(22, true));//create pw
   add_post_meta($post_id, '_closer_pw', $pw, true );//assign to custom field but don't make any new ones or update if it exists
 }
 
